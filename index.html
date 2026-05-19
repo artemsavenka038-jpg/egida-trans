@@ -6,7 +6,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ЭГИДА ТРАНС — Панель v6496 CLEAN</title>
+<title>ЭГИДА ТРАНС — Панель v6500 CLEAN</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
 <script>
@@ -1644,67 +1644,92 @@ function WAModal(props) {
   var setLD = props._setLD;
   var lTime = props._lTime;
   var setLT = props._setLT;
-  var assignedOrder = findAssignedOrderForTrip(truck, trip, orders);
-  var cl = trip ? CLIENTS.find(function(c) {
-    return c.id === trip.clientId;
-  }) : null;
-  var uo = cl && trip && cl.unloadOptions && cl.unloadOptions.length ? cl.unloadOptions[trip.unloadIdx || 0] || cl.unloadOptions[0] : null;
-  var msg = "";
-  if (assignedOrder) {
-    msg = buildOrderTextFromOrder(assignedOrder, truck, trip, lDate, lTime);
-  } else if (trip && trip.direction === "back") {
-    var backDate = trip.departAt ? fmtDate(trip.departAt) : fmtDate(lDate);
-    var backTime = trip.departAt ? String(trip.departAt).slice(11, 16) : lTime;
-    msg = "\u041E\u0431\u0440\u0430\u0442\u043D\u044B\u0439 \u0433\u0440\u0443\u0437: " + (trip.cargo || "") + "\n\u0414\u0430\u0442\u0430 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0438 \u043E\u0431\u0440\u0430\u0442\u043A\u0438: " + backDate + "\n\u0411\u044B\u0442\u044C \u043D\u0430 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0435: " + backTime + "\n\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430: " + (trip.loadAddr || "") + "\n" + (trip.loadDispPhone || trip.orderLoadPhone ? "\u0414\u0438\u0441\u043F\u0435\u0442\u0447\u0435\u0440 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0438: " + (trip.loadDispPhone || trip.orderLoadPhone) + "\n" : "") + "\u0412\u044B\u0433\u0440\u0443\u0437\u043A\u0430: " + (trip.unloadAddr || "\u041C\u0438\u043D\u0441\u043A") + "\n" + (trip.unloadDispPhone || trip.orderUnloadPhone ? "\u0414\u0438\u0441\u043F\u0435\u0442\u0447\u0435\u0440 \u0432\u044B\u0433\u0440\u0443\u0437\u043A\u0438: " + (trip.unloadDispPhone || trip.orderUnloadPhone) + "\n" : "") + (trip.temp ? "\u0422\u0435\u043C\u043F\u0435\u0440\u0430\u0442\u0443\u0440\u0430: " + trip.temp + "\n" : "") + (trip.rate || trip.orderRate ? "\u0421\u0442\u0430\u0432\u043A\u0430: " + (trip.rate || trip.orderRate) + " BYN\n" : "") + (trip.note || trip.orderNote ? "\u041F\u0440\u0438\u043C\u0435\u0447\u0430\u043D\u0438\u0435: " + (trip.note || trip.orderNote) + "\n" : "") + "\u041A\u043E\u043D\u0442\u0430\u043A\u0442 \u0434\u0438\u0441\u043F\u0435\u0442\u0447\u0435\u0440\u0430 " + DISP + " (\u043A\u0440\u0443\u0433\u043B\u043E\u0441\u0443\u0442\u043E\u0447\u043D\u043E)";
-  } else if (cl) {
-    if (trip && trip.linkedRoute && trip.linkClient2) {
-      var cl2 = CLIENTS.find(function(c) {
-        return c.id === trip.linkClient2;
-      });
-      var firstCity = trip.midPoint || (uo ? uo.city : "\u041C\u0421\u041A");
-      var secondCity = cl2 && cl2.unloadOptions && cl2.unloadOptions[0] ? cl2.unloadOptions[0].city : trip.finalPoint || "\u0444\u0438\u043D\u0430\u043B\u044C\u043D\u0430\u044F \u0442\u043E\u0447\u043A\u0430";
-      msg = "\u0421\u0412\u042F\u0417\u0410\u041D\u041D\u042B\u0419 \u0420\u0415\u0419\u0421 \u2014 2 \u0437\u0430\u044F\u0432\u043A\u0438\n\n1) " + (trip.linkedClient1Name || cl.name) + "\n" + getWAMsg(cl.id, fmtDate(trip.firstLoadAt || lDate), trip.firstLoadAt ? String(trip.firstLoadAt).slice(11, 16) : lTime, firstCity) + "\n\n--------------------\n\n2) " + (trip.linkedClient2Name || (cl2 ? cl2.name : "2 \u043A\u043B\u0438\u0435\u043D\u0442")) + "\n" + (cl2 ? getWAMsg(cl2.id, fmtDate(trip.secondLoadAt || trip.arriveUnload || lDate), trip.secondLoadAt ? String(trip.secondLoadAt).slice(11, 16) : "\u043F\u043E\u0441\u043B\u0435 \u0432\u044B\u0433\u0440\u0443\u0437\u043A\u0438 1 \u0437\u0430\u044F\u0432\u043A\u0438", secondCity) : "\u0414\u0430\u043D\u043D\u044B\u0435 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u043A\u043B\u0438\u0435\u043D\u0442\u0430 \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u044B") + "\n\n\u041A\u043E\u043D\u0442\u0430\u043A\u0442 \u0434\u0438\u0441\u043F\u0435\u0442\u0447\u0435\u0440\u0430 " + DISP + " (\u043A\u0440\u0443\u0433\u043B\u043E\u0441\u0443\u0442\u043E\u0447\u043D\u043E)";
-      if (trip && (trip.orderCargo || trip.orderRate || trip.orderLoadPhone || trip.orderUnloadPhone || trip.orderNote || trip.loadAddr || trip.unloadAddr)) {
-        msg += "\n\n\u0414\u0430\u043D\u043D\u044B\u0435 \u0437\u0430\u043A\u0430\u0437\u0430:" + (trip.orderCargo ? "\n\u0413\u0440\u0443\u0437: " + trip.orderCargo : "") + (trip.loadAddr ? "\n\u0410\u0434\u0440\u0435\u0441 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0438: " + trip.loadAddr : "") + (trip.unloadAddr ? "\n\u0410\u0434\u0440\u0435\u0441 \u0432\u044B\u0433\u0440\u0443\u0437\u043A\u0438: " + trip.unloadAddr : "") + (trip.orderRate ? "\n\u0421\u0442\u0430\u0432\u043A\u0430: " + trip.orderRate + " BYN" : "") + (trip.orderLoadPhone ? "\n\u0414\u0438\u0441\u043F\u0435\u0442\u0447\u0435\u0440 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0438: " + trip.orderLoadPhone : "") + (trip.orderUnloadPhone ? "\n\u0414\u0438\u0441\u043F\u0435\u0442\u0447\u0435\u0440 \u0432\u044B\u0433\u0440\u0443\u0437\u043A\u0438: " + trip.orderUnloadPhone : "") + (trip.orderNote ? "\n\u041F\u0440\u0438\u043C\u0435\u0447\u0430\u043D\u0438\u0435: " + trip.orderNote : "");
-      }
-    } else {
-      var loadMomentMsg = forwardLoadDT(truck, trip) || lDate;
-      var loadDateMsg = fmtDate(loadMomentMsg);
-      var loadTimeMsg = String(loadMomentMsg).indexOf("T") >= 0 ? String(loadMomentMsg).slice(11, 16) : lTime;
-      msg = getWAMsg(cl.id, loadDateMsg, loadTimeMsg, uo ? uo.city : "\u041C\u0421\u041A");
-      if (trip && (trip.orderCargo || trip.orderCount || trip.orderRate || trip.orderLoadPhone || trip.orderUnloadPhone || trip.orderNote || trip.loadAddr || trip.unloadAddr)) {
-        msg += "\n\n\u0414\u0430\u043D\u043D\u044B\u0435 \u0437\u0430\u043A\u0430\u0437\u0430:" + (trip.orderCargo ? "\n\u0413\u0440\u0443\u0437: " + trip.orderCargo : "") + (trip.orderCount ? "\n\u041C\u0430\u0448\u0438\u043D: " + trip.orderCount : "") + (trip.loadAddr ? "\n\u0410\u0434\u0440\u0435\u0441 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0438: " + trip.loadAddr : "") + (trip.unloadAddr ? "\n\u0410\u0434\u0440\u0435\u0441 \u0432\u044B\u0433\u0440\u0443\u0437\u043A\u0438: " + trip.unloadAddr : "") + (trip.orderRate ? "\n\u0421\u0442\u0430\u0432\u043A\u0430: " + trip.orderRate + " BYN" : "") + (trip.orderLoadPhone ? "\n\u0414\u0438\u0441\u043F\u0435\u0442\u0447\u0435\u0440 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0438: " + trip.orderLoadPhone : "") + (trip.orderUnloadPhone ? "\n\u0414\u0438\u0441\u043F\u0435\u0442\u0447\u0435\u0440 \u0432\u044B\u0433\u0440\u0443\u0437\u043A\u0438: " + trip.orderUnloadPhone : "") + (trip.orderNote ? "\n\u041F\u0440\u0438\u043C\u0435\u0447\u0430\u043D\u0438\u0435: " + trip.orderNote : "");
-      }
+  var clientVersion = props.clientVersion || 0;
+
+  function currentClient() {
+    var cid = trip && trip.clientId ? trip.clientId : truck && truck.clientId ? truck.clientId : null;
+    var cname = (trip && (trip.clientName || trip.client)) || (truck && (truck.clientName || truck.client)) || "";
+    function norm(v){ return String(v || "").trim().toLowerCase(); }
+    if (cid) {
+      var byId = CLIENTS.find(function(c) { return String(c.id) === String(cid); });
+      if (byId) return byId;
     }
-  } else {
-    msg = "\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430 " + fmtDate(lDate) + " \u043A " + lTime + "\n\u041A\u043E\u043D\u0442\u0430\u043A\u0442 \u0434\u0438\u0441\u043F\u0435\u0442\u0447\u0435\u0440\u0430 " + DISP;
+    if (cname) {
+      var byName = CLIENTS.find(function(c) { return norm(c.name) === norm(cname); });
+      if (byName) return byName;
+    }
+    return null;
   }
-  var savedMsg = "";
-  try {
-    var msgKey = "egida_last_msg_" + (truck ? truck.id : "x") + "_" + (trip ? trip.id || trip.clientId || trip.direction || "load" : "load");
-    savedMsg = "";
-  } catch (e) {
+  function firstUnload(c) {
+    if (!c || !c.unloadOptions || !c.unloadOptions.length) return null;
+    var idx = trip && trip.unloadIdx !== void 0 ? Number(trip.unloadIdx || 0) : 0;
+    return c.unloadOptions[idx] || c.unloadOptions[0] || null;
   }
-  var templateClientKey = assignedOrder ? "order_" + assignedOrder.id : trip && trip.direction === "back" ? "back_" + (trip.cargo || "default") : cl ? "client_" + cl.id : "default";
+  function cleanLine(label, value) {
+    value = String(value || "").trim();
+    return value ? label + value + "\n" : "";
+  }
+  function makeMsg() {
+    var t = truck || {};
+    var r = trip || t.trip || {};
+    var c = currentClient();
+    var u = firstUnload(c);
+    var date = lDate || todayISO();
+    var time = lTime || "09:00";
+    var loadAt = r.firstLoadAt || r.arriveLoad || r.loadAt || t.firstLoadAt || t.arriveLoad || t.loadAt || "";
+    if (loadAt && String(loadAt).indexOf("T") >= 0) {
+      if (!props._lDate) date = String(loadAt).slice(0,10);
+      if (!props._lTime) time = String(loadAt).slice(11,16);
+    }
+    var clientName = (c && c.name) || r.clientName || t.clientName || "";
+    var cargo = r.orderCargo || r.cargo || t.orderCargo || "";
+    // ВАЖНО: если клиент найден, берём актуальные адреса именно из карточки клиента.
+    // Так изменения в "Редактировать клиента" сразу попадают в WA.
+    var loadAddr = c ? (c.loadAddr || "") : (r.loadAddr || t.loadAddr || r.originAddr || t.originAddr || "");
+    var unloadAddr = "";
+    if (c && u) unloadAddr = (u.city ? u.city + ", " : "") + (u.addr || "");
+    if (!unloadAddr) unloadAddr = r.unloadAddr || t.unloadAddr || "";
+    var temp = c ? (c.temp || "") : (r.temp || t.temp || "");
+    var rate = r.orderRate || r.rate || t.orderRate || "";
+    var loadPhone = r.orderLoadPhone || r.loadPhone || r.loadDispPhone || t.orderLoadPhone || "";
+    var unloadPhone = r.orderUnloadPhone || r.unloadPhone || r.unloadDispPhone || t.orderUnloadPhone || "";
+    var note = r.orderNote || r.note || t.orderNote || "";
+
+    var msg = "";
+    if (r.direction === "back") {
+      msg += cleanLine("Обратный груз: ", r.cargo || r.orderCargo || t.backCargo && t.backCargo.cargo || "");
+      msg += "Дата загрузки обратки: " + fmtDate(date) + "\n";
+      msg += "Быть на загрузке: " + time + "\n";
+    } else {
+      msg += "Дата загрузки: " + fmtDate(date) + " Время: " + time + "\n";
+      msg += cleanLine("Клиент: ", clientName);
+      msg += cleanLine("Груз: ", cargo);
+    }
+    msg += cleanLine("Загрузка: ", loadAddr);
+    msg += cleanLine("Диспетчер загрузки: ", loadPhone);
+    msg += cleanLine("Выгрузка: ", unloadAddr);
+    msg += cleanLine("Диспетчер выгрузки: ", unloadPhone);
+    msg += cleanLine("Температура перевозки: ", temp);
+    msg += cleanLine("Ставка: ", rate ? rate + " BYN" : "");
+    msg += cleanLine("Примечание: ", note);
+    msg += "\nДанные заказа:\n";
+    msg += cleanLine("Адрес загрузки: ", loadAddr);
+    msg += cleanLine("Адрес выгрузки: ", unloadAddr);
+    return msg.replace(/\n{3,}/g, "\n\n").trim();
+  }
+
+  var msg = makeMsg();
   var editMsgState = useState(msg);
   var editMsg = editMsgState[0];
   var setEditMsg = editMsgState[1];
   useEffect(function() {
-    setEditMsg(msg);
-  }, [truck && truck.id, trip && (trip.id || trip.clientId || trip.direction), assignedOrder ? assignedOrder.id : ""]);
+    setEditMsg(makeMsg());
+  }, [truck && truck.id, trip && (trip.id || trip.clientId || trip.clientName || trip.direction), lDate, lTime, clientVersion]);
+
   function saveLastText() {
     try {
-      var msgKey2 = "egida_last_msg_" + (truck ? truck.id : "x") + "_" + (trip ? trip.id || trip.clientId || trip.direction || "load" : "load");
-      localStorage.setItem(msgKey2, editMsg);
-    } catch (e) {
-    }
-    try {
       if (onSaveMsg && truck) onSaveMsg(truck.id, trip, editMsg);
-    } catch (e) {
-    }
-    try {
-    } catch (e) {
-    }
+    } catch (e) {}
   }
   function send() {
     saveLastText();
@@ -1723,32 +1748,21 @@ function WAModal(props) {
     window.open("https://max.ru/", "_blank");
     onClose();
   }
-  return React.createElement(Modal, { onClose, wide: true }, React.createElement("div", { style: { fontWeight: 800, fontSize: 14, color: "#f0f6ff", marginBottom: 3 } }, "WA \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435"), React.createElement("div", { style: { fontSize: 10, color: "#364e72", marginBottom: 11 } }, truck ? truck.driver : "", " \xB7 ", truck ? truck.phone : ""), React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginBottom: 10 } }, React.createElement("div", null, React.createElement(Lbl, null, "\u0414\u0430\u0442\u0430 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0438"), React.createElement("input", { type: "date", value: lDate, onChange: function(e) {
-    setLD(e.target.value);
-  }, style: INP_STYLE })), React.createElement("div", null, React.createElement(Lbl, null, "\u0411\u044B\u0442\u044C \u043A"), React.createElement("input", { type: "text", value: lTime, onChange: function(e) {
-    setLT(e.target.value);
-  }, placeholder: "11:00", style: INP_STYLE }))), React.createElement(Lbl, null, "\u0420\u0435\u0434\u0430\u043A\u0442\u0438\u0440\u0443\u0435\u043C\u044B\u0439 \u0442\u0435\u043A\u0441\u0442 \u043F\u0435\u0440\u0435\u0434 \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u043E\u0439"), React.createElement("textarea", { value: editMsg, onChange: function(e) {
-    setEditMsg(e.target.value);
-  }, style: {
-    width: "100%",
-    background: "#07090f",
-    border: "1px solid #141c2e",
-    borderRadius: 7,
-    padding: "10px 12px",
-    fontSize: 11,
-    color: "#dce4f0",
-    whiteSpace: "pre-wrap",
-    wordBreak: "break-word",
-    marginBottom: 10,
-    height: 260,
-    overflowY: "auto",
-    lineHeight: 1.65,
-    fontFamily: "inherit",
-    resize: "vertical"
-  } }), React.createElement("div", { style: { display: "flex", gap: 6 } }, React.createElement("button", { onClick: function() {
-    saveLastText();
-    if (navigator.clipboard) navigator.clipboard.writeText(editMsg);
-  }, style: { flex: 1, padding: 8, borderRadius: 7, border: "1px solid #141c2e", background: "transparent", color: "#364e72", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" } }, "\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C/\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C"), React.createElement("button", { onClick: sendMax, style: { flex: 1, padding: 8, borderRadius: 7, border: "none", background: "#2563eb20", color: "#60a5fa", fontWeight: 800, cursor: "pointer", fontFamily: "inherit", fontSize: 12 } }, "MAX"), React.createElement("button", { onClick: send, style: { flex: 2, padding: 8, borderRadius: 7, border: "none", background: "#25d366", color: "#fff", fontWeight: 800, cursor: "pointer", fontFamily: "inherit", fontSize: 12 } }, "WhatsApp")));
+  return React.createElement(Modal, { onClose: onClose, wide: true },
+    React.createElement("div", { style: { fontWeight: 800, fontSize: 14, color: "#f0f6ff", marginBottom: 3 } }, "WA сообщение"),
+    React.createElement("div", { style: { fontSize: 10, color: "#364e72", marginBottom: 11 } }, truck ? truck.driver : "", " · ", truck ? truck.phone : ""),
+    React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginBottom: 10 } },
+      React.createElement("div", null, React.createElement(Lbl, null, "Дата загрузки"), React.createElement("input", { type: "date", value: lDate, onChange: function(e) { setLD(e.target.value); }, style: INP_STYLE })),
+      React.createElement("div", null, React.createElement(Lbl, null, "Быть к"), React.createElement("input", { type: "text", value: lTime, onChange: function(e) { setLT(e.target.value); }, placeholder: "11:00", style: INP_STYLE }))
+    ),
+    React.createElement(Lbl, null, "Редактируемый текст перед отправкой"),
+    React.createElement("textarea", { value: editMsg, onChange: function(e) { setEditMsg(e.target.value); }, style: { width: "100%", background: "#07090f", border: "1px solid #141c2e", borderRadius: 7, padding: "10px 12px", fontSize: 11, color: "#dce4f0", whiteSpace: "pre-wrap", wordBreak: "break-word", marginBottom: 10, height: 260, overflowY: "auto", lineHeight: 1.65, fontFamily: "inherit", resize: "vertical" } }),
+    React.createElement("div", { style: { display: "flex", gap: 6 } },
+      React.createElement("button", { onClick: function() { saveLastText(); if (navigator.clipboard) navigator.clipboard.writeText(editMsg); }, style: { flex: 1, padding: 8, borderRadius: 7, border: "1px solid #141c2e", background: "transparent", color: "#364e72", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" } }, "Сохранить/копировать"),
+      React.createElement("button", { onClick: sendMax, style: { flex: 1, padding: 8, borderRadius: 7, border: "none", background: "#2563eb20", color: "#60a5fa", fontWeight: 800, cursor: "pointer", fontFamily: "inherit", fontSize: 12 } }, "MAX"),
+      React.createElement("button", { onClick: send, style: { flex: 2, padding: 8, borderRadius: 7, border: "none", background: "#25d366", color: "#fff", fontWeight: 800, cursor: "pointer", fontFamily: "inherit", fontSize: 12 } }, "WhatsApp")
+    )
+  );
 }
 function LoginScreen(props) {
   var passState = useState("");
@@ -3559,11 +3573,17 @@ function App() {
       if (!Array.isArray(prev)) return prev;
       var changed = false;
       var next = prev.map(function(t) {
-        var hasClient = t.clientId === c.id || (t.trip && t.trip.clientId === c.id) || (t.trips || []).some(function(r) { return r && r.clientId === c.id; });
+        function normName(v){ return String(v || "").trim().toLowerCase(); }
+        var hasClient = t.clientId === c.id ||
+          normName(t.clientName) === normName(c.name) ||
+          (t.trip && (t.trip.clientId === c.id || normName(t.trip.clientName || t.trip.client) === normName(c.name))) ||
+          (t.trips || []).some(function(r) { return r && (r.clientId === c.id || normName(r.clientName || r.client) === normName(c.name)); });
         if (!hasClient) return t;
         changed = true;
         function updTrip(r) {
-          if (!r || r.clientId !== c.id) return r;
+          if (!r) return r;
+          function normName2(v){ return String(v || "").trim().toLowerCase(); }
+          if (!(r.clientId === c.id || normName2(r.clientName || r.client) === normName2(c.name))) return r;
           var nr = Object.assign({}, r, {
             clientName: c.name || r.clientName,
             originAddr: c.loadAddr || r.originAddr || r.loadAddr,
@@ -3607,7 +3627,7 @@ function App() {
         saveTrucksNow(next);
         var cloudPatch = {};
         next.forEach(function(t) {
-          if (t && (t.clientId === c.id || (t.trip && t.trip.clientId === c.id) || (t.trips || []).some(function(r) { return r && r.clientId === c.id; }))) {
+          if (t && (t.clientId === c.id || String(t.clientName||"").trim().toLowerCase() === String(c.name||"").trim().toLowerCase() || (t.trip && (t.trip.clientId === c.id || String(t.trip.clientName||t.trip.client||"").trim().toLowerCase() === String(c.name||"").trim().toLowerCase())) || (t.trips || []).some(function(r) { return r && (r.clientId === c.id || String(r.clientName||r.client||"").trim().toLowerCase() === String(c.name||"").trim().toLowerCase()); }))) {
             cloudPatch[String(t.id)] = t;
             dbPatch("/status/" + t.id, {
               lastEvent: "\u041A\u043B\u0438\u0435\u043D\u0442 \u043E\u0431\u043D\u043E\u0432\u043B\u0451\u043D: " + (c.name || ""),
@@ -4536,7 +4556,8 @@ function App() {
       _lDate: waDate,
       _setLD: setWaDate,
       _lTime: waTime,
-      _setLT: setWaTime
+      _setLT: setWaTime,
+      clientVersion: clientVersion
     }
   ) : null, modal && modal.type === "addClient" ? React.createElement(
     AddClientModal,
@@ -4681,4 +4702,43 @@ try {
 <script>
 window.addEventListener('unhandledrejection',function(ev){var msg=ev.reason&&ev.reason.stack?ev.reason.stack:String(ev.reason);document.getElementById("root").innerHTML='<div style="color:#ef4444;font-family:monospace;padding:16px;background:#07090f;min-height:100vh;font-size:11px;white-space:pre-wrap">Ошибка: '+msg.replace(/</g,'&lt;')+'</div>';});
 try{ReactDOM.render(React.createElement(ErrorBoundary,null,React.createElement(App)),document.getElementById("root"));}catch(e){document.getElementById("root").innerHTML='<div style="color:#ef4444;font-family:monospace;padding:16px;background:#07090f;min-height:100vh;font-size:11px;white-space:pre-wrap">Ошибка запуска: '+(e.stack||e.message||String(e)).replace(/</g,'&lt;')+'</div>';}
-</script></body></html>
+</script><script>
+(function(){
+  function egidaAddMachineModal(){
+    var old=document.getElementById("egida-add-machine-modal"); if(old) old.remove();
+    var wrap=document.createElement("div");
+    wrap.id="egida-add-machine-modal";
+    wrap.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:999999;display:flex;align-items:center;justify-content:center;padding:18px";
+    wrap.innerHTML='<div style="width:min(520px,96vw);background:#0b1020;border:1px solid #26385f;border-radius:18px;padding:18px;color:white;font-family:Arial">'+
+      '<h2 style="margin:0 0 12px">Добавить машину</h2>'+
+      '<input id="egidaNewPlate" placeholder="Номер машины" style="width:100%;margin:6px 0;padding:12px;border-radius:10px;background:#07090f;color:white;border:1px solid #26385f">'+
+      '<input id="egidaNewDriver" placeholder="ФИО водителя" style="width:100%;margin:6px 0;padding:12px;border-radius:10px;background:#07090f;color:white;border:1px solid #26385f">'+
+      '<input id="egidaNewPhone" placeholder="Телефон" style="width:100%;margin:6px 0;padding:12px;border-radius:10px;background:#07090f;color:white;border:1px solid #26385f">'+
+      '<div style="display:flex;gap:8px;margin-top:12px"><button id="egidaSaveNewTruck" style="flex:1;padding:12px;border-radius:10px;background:#2563eb;color:white;border:0;font-weight:800">Сохранить</button><button id="egidaCancelNewTruck" style="flex:1;padding:12px;border-radius:10px;background:#111827;color:white;border:1px solid #334155;font-weight:800">Отмена</button></div>'+
+      '</div>';
+    document.body.appendChild(wrap);
+    document.getElementById("egidaCancelNewTruck").onclick=function(){wrap.remove()};
+    document.getElementById("egidaSaveNewTruck").onclick=function(){
+      var plate=document.getElementById("egidaNewPlate").value.trim();
+      var driver=document.getElementById("egidaNewDriver").value.trim();
+      var phone=document.getElementById("egidaNewPhone").value.trim();
+      if(!plate||!driver){alert("Заполни номер и ФИО");return;}
+      var id="custom_"+Date.now();
+      var truck={id:id,custom:true,plate:plate,driver:driver,phone:phone,status:"FREE",location:"Минск",freeAt:(new Date()).toISOString().slice(0,16),clientId:null,route:"",backCargo:null,trips:[],driverEvents:[],_updatedAt:(new Date()).toISOString().slice(0,16)};
+      Promise.all([
+        fetch(DB_URL+"/app/trucks/"+id+".json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(truck)}),
+        fetch(DB_URL+"/trucks/"+id+".json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(truck)})
+      ]).then(function(){alert("Машина сохранена");location.reload();}).catch(function(){alert("Ошибка сохранения в Firebase")});
+    };
+  }
+  document.addEventListener("click",function(e){
+    var el=e.target; if(!el) return;
+    var txt=(el.innerText||el.textContent||"").trim().toLowerCase();
+    if(txt==="+ машина"||txt==="+машина"||txt==="добавить машину"){
+      e.preventDefault(); e.stopPropagation(); egidaAddMachineModal();
+    }
+  },true);
+  window.egidaAddMachineModal=egidaAddMachineModal;
+})();
+</script>
+</body></html>
