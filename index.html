@@ -6,7 +6,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ЭГИДА ТРАНС — Панель v6511 CLEAN</title>
+<title>ЭГИДА ТРАНС — Панель v6512 CLEAN</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js" crossorigin="anonymous">
 document.addEventListener('change', function(e){
   if(e.target && e.target.id === 'dayFilter'){
@@ -2611,6 +2611,7 @@ function App() {
               if (!ct) return t;
               var tTime = t._updatedAt || "";
               var ctTime = ct._updatedAt || "";
+              if (t._freedAt && (!ct._freedAt || String(ct._freedAt) < String(t._freedAt)) && (!ctTime || String(ctTime) <= String(t._freedAt))) return t;
               if (!ctTime || ctTime <= tTime) return t;
               var liveEv = statusFromDriverEvent(t);
               var patch = {};
@@ -2751,6 +2752,9 @@ function App() {
               fb = Object.assign({}, statusNode, { status: correctedStatus });
             }
             if (!fb) {
+              if (t._freedAt && cloudTruck && (!cloudTruck._freedAt || String(cloudTruck._freedAt) < String(t._freedAt))) {
+                return t;
+              }
               if (cloudTruck) {
                 var tripFields = [
                   "clientId",
@@ -2796,6 +2800,42 @@ function App() {
               }
               return t;
             }
+            if (fb && fb.status === "FREE" && fb.key === "free") {
+              var fbFreeTime = fb._freedAt || fb.lastTime || nowISO();
+              if (!t._freedAt || String(fbFreeTime) >= String(t._freedAt)) {
+                changed = true;
+                return Object.assign({}, t, {
+                  status: "FREE",
+                  clientId: null,
+                  clientName: "",
+                  route: "",
+                  backCargo: null,
+                  trip: null,
+                  trips: [],
+                  nextPlan: null,
+                  nextPlanText: "",
+                  loadAt: "",
+                  arriveLoad: "",
+                  firstLoadAt: "",
+                  loadDate: "",
+                  loadTime: "",
+                  orderId: "",
+                  orderCargo: "",
+                  orderCount: "",
+                  orderNote: "",
+                  orderRate: "",
+                  orderLoadPhone: "",
+                  orderUnloadPhone: "",
+                  loadAddr: "",
+                  unloadAddr: "",
+                  unloadCity: "",
+                  freeAt: fbFreeTime,
+                  location: fb.location || t.location,
+                  _freedAt: fbFreeTime,
+                  _updatedAt: fbFreeTime
+                });
+              }
+            }
             var lastEvTime = t.driverEvents && t.driverEvents.length ? t.driverEvents[t.driverEvents.length - 1].time : "";
             var liveStatus = statusFromDriverEvent(t);
             var newStatus = fb.status;
@@ -2840,7 +2880,7 @@ function App() {
                 driverEvents: (t.driverEvents || []).concat([newEv])
               };
               var tripSrc = newerCloud(fb, cloudTruck);
-              if (tripSrc) {
+              if (tripSrc && newStatus !== "FREE") {
                 var TRIP_KEYS = [
                   "clientId",
                   "clientName",
@@ -2897,7 +2937,7 @@ function App() {
               syncChanged = true;
             }
             var tripSrc2 = newerCloud(statusNode, cloudTruck);
-            if (tripSrc2) {
+            if (tripSrc2 && newStatus !== "FREE") {
               var SYNC_KEYS = [
                 "clientId",
                 "clientName",
@@ -2966,7 +3006,7 @@ function App() {
         if (!Array.isArray(prev)) return prev;
         var changed = false;
         var next = prev.map(function(t) {
-          if (t.backCargo && t.backCargo.departAt && t.status !== "BACK" && t.status !== "FREE" && t.status !== "UNLOADED") {
+          if (!t._freedAt && t.backCargo && t.backCargo.departAt && t.status !== "BACK" && t.status !== "FREE" && t.status !== "UNLOADED") {
             var liveStatus = statusFromDriverEvent(t) || t.status;
             if (isLiveDriverStatus(liveStatus)) {
               try {
@@ -3361,16 +3401,42 @@ function App() {
       var c = detectCity(t.backCargo.unloadAddr);
       if (c !== "\u041C\u043E\u0441\u043A\u0432\u0430") loc = c;
     }
-    upd(id, {
+    var freeNow = addH(nowISO(), 3 / 60) || nowISO();
+    var freePatch = {
       status: "FREE",
       clientId: null,
+      clientName: "",
       route: "",
       backCargo: null,
-      freeAt: nowISO(),
+      trip: null,
+      trips: [],
+      nextPlan: null,
+      nextPlanText: "",
+      sentFlags: {},
+      loadAt: "",
+      arriveLoad: "",
+      firstLoadAt: "",
+      loadDate: "",
+      loadTime: "",
+      orderId: "",
+      orderCargo: "",
+      orderCount: "",
+      orderNote: "",
+      orderRate: "",
+      orderLoadPhone: "",
+      orderUnloadPhone: "",
+      loadAddr: "",
+      unloadAddr: "",
+      unloadCity: "",
+      freeAt: freeNow,
       location: loc,
-      driverEvents: []
-    });
-    var freeNow = addH(nowISO(), 3 / 60) || nowISO();
+      driverEvents: [],
+      _freedAt: freeNow,
+      _updatedAt: freeNow
+    };
+    upd(id, freePatch);
+    dbPatch("/app/trucks/" + id, freePatch).catch(function() {});
+    dbPatch("/trucks/" + id, freePatch).catch(function() {});
     dbPut("/status/" + id, {
       status: "FREE",
       lastEvent: "\u0414\u0438\u0441\u043F\u0435\u0442\u0447\u0435\u0440: \u0421\u0432\u043E\u0431\u043E\u0434\u043D\u0430",
@@ -3382,6 +3448,8 @@ function App() {
       clientId: null,
       clientName: "",
       trip: null,
+      trips: [],
+      nextPlan: null,
       backCargo: null,
       loadAddr: "",
       unloadAddr: "",
@@ -3390,17 +3458,17 @@ function App() {
       extraKm: 0,
       detourKm: 0,
       freeAt: freeNow,
+      _freedAt: freeNow,
       _updatedAt: freeNow
-    }).catch(function() {
-    });
+    }).catch(function() {});
     dbPut("/events/" + id + "/latest", {
       key: "free",
       label: "\u0414\u0438\u0441\u043F\u0435\u0442\u0447\u0435\u0440: \u0421\u0432\u043E\u0431\u043E\u0434\u043D\u0430",
       time: freeNow,
       note: "",
-      status: "FREE"
-    }).catch(function() {
-    });
+      status: "FREE",
+      _freedAt: freeNow
+    }).catch(function() {});
     notify("\u0421\u0432\u043E\u0431\u043E\u0434\u043D\u0430: " + loc);
   }
   function doEvent(truckId, eventKey, note) {
