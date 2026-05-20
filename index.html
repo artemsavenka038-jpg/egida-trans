@@ -6,7 +6,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ЭГИДА ТРАНС — Панель v6510 CLEAN</title>
+<title>ЭГИДА ТРАНС — Панель v6511 CLEAN</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js" crossorigin="anonymous">
 document.addEventListener('change', function(e){
   if(e.target && e.target.id === 'dayFilter'){
@@ -457,6 +457,25 @@ function getDispatcherContactForTrip(trip, order) {
 }
 
 
+
+function findClientForMessage(order, trip, truck) {
+  order = order || {};
+  trip = trip || {};
+  truck = truck || {};
+  function norm(v){ return String(v || "").trim().toLowerCase(); }
+  var cid = order.clientId || trip.clientId || truck.clientId || "";
+  var cname = order.client || order.clientName || trip.clientName || trip.client || truck.clientName || truck.client || "";
+  if (cid) {
+    var byId = CLIENTS.find(function(c){ return String(c.id) === String(cid); });
+    if (byId) return byId;
+  }
+  if (cname) {
+    var byName = CLIENTS.find(function(c){ return norm(c.name) === norm(cname); });
+    if (byName) return byName;
+  }
+  return null;
+}
+
 function findOrderByIdStrict(orders, id) {
   if (!id) return null;
   return (orders || []).find(function(o){ return String(o.id) === String(id); }) || null;
@@ -475,7 +494,9 @@ function normalizeOrderForMessage(order, trip, truck) {
   out.unloadPhone = order.unloadPhone || trip.orderUnloadPhone || trip.unloadPhone || trip.unloadDispPhone || "";
   out.rate = order.rate || trip.orderRate || trip.rate || "";
   out.temp = order.temp || trip.temp || "";
-  out.note = order.note || trip.orderNote || trip.note || "";
+  var clientForNote = findClientForMessage(order, trip, truck);
+  out.note = order.note || trip.orderNote || trip.note || (clientForNote && clientForNote.note) || "";
+  out.clientNote = clientForNote && clientForNote.note || "";
   out.orderDate = order.orderDate || trip.loadDate || trip.date || (trip.departAt ? String(trip.departAt).slice(0,10) : "");
   return out;
 }
@@ -1824,7 +1845,10 @@ function WAModal(props) {
   function sendMax() {
     saveLastText();
     if (navigator.clipboard) navigator.clipboard.writeText(editMsg);
-    window.open("https://max.ru/", "_blank");
+    try {
+      window.open("https://max.ru/", "_blank");
+    } catch(e) {}
+    alert("Текст для MAX скопирован. Вставь его в чат MAX.");
     onClose();
   }
   return React.createElement(Modal, { onClose: onClose, wide: true },
@@ -3678,6 +3702,7 @@ function App() {
         orderCargo: ord.cargo || "",
         orderCount: ord.count || "",
         orderNote: ord.note || "",
+        clientId: ord.clientId || "",
         orderRate: ord.rate || "",
         orderLoadPhone: ord.loadPhone || "",
         orderUnloadPhone: ord.unloadPhone || "",
@@ -4716,6 +4741,7 @@ function App() {
         var bo = window.__egidaSelectedBackOrder || null;
         if (bo) d = Object.assign({}, d, {
           orderId: bo.id,
+          clientId: bo.clientId || "",
           orderSnapshot: Object.assign({}, bo),
           client: bo.client || "",
           cargo: bo.cargo || d.cargo || "",
