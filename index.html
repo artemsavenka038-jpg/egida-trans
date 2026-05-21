@@ -6,7 +6,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ЭГИДА ТРАНС — Панель v6526 CLEAN</title>
+<title>ЭГИДА ТРАНС — Панель v6528 CLEAN</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js" crossorigin="anonymous">
 document.addEventListener('change', function(e){
   if(e.target && e.target.id === 'dayFilter'){
@@ -3360,14 +3360,12 @@ function App() {
         plannedAt: nowISO(),
         route: d.linkedRoute ? d.displayRouteName || d.departFrom + "-" + (d.midPoint || uo.city) + "-" + (d.finalPoint || "") : d.departFrom + "-" + uo.city
       });
-      upd(d.truckId, {
-        nextPlan,
-        nextPlanText: "\u041F\u043B\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u0435 \u0430\u0432\u0442\u043E \u0434\u0430\u043B\u044C\u0448\u0435: " + realClientName
-      });
-      saveTruckTripCloud(d.truckId, {
-        nextPlan,
-        nextPlanText: "\u041F\u043B\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u0435 \u0430\u0432\u0442\u043E \u0434\u0430\u043B\u044C\u0448\u0435: " + realClientName
-      });
+      var nextPlanTextValue = "\u041F\u043B\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u0435 \u0430\u0432\u0442\u043E \u0434\u0430\u043B\u044C\u0448\u0435: " + realClientName;
+      var planPatch = { nextPlan: nextPlan, nextPlanText: nextPlanTextValue, _updatedAt: nowISO() };
+      upd(d.truckId, planPatch);
+      saveTruckTripCloud(d.truckId, planPatch);
+      dbPatch("/trucks/" + d.truckId, planPatch).catch(function(){});
+      writeCloudStatus(d.truckId, t.status || "FORWARD", "\u0417\u0430\u043F\u043B\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u043D \u0432\u0442\u043E\u0440\u043E\u0439 \u0440\u0435\u0439\u0441", "next_plan", "", planPatch);
       notify("\u0417\u0430\u043F\u043B\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u043D \u0432\u0442\u043E\u0440\u043E\u0439 \u0440\u0435\u0439\u0441: " + t.plate + " \u2192 " + realClientName);
       return;
     }
@@ -4357,6 +4355,54 @@ function App() {
     });
   }
 
+  function openPlannedBack(truckId) {
+    var t = trucks.find(function(x) { return x.id === truckId; });
+    var p = t && t.nextPlan ? t.nextPlan : {};
+    var b = p.plannedBack || {};
+    setBkCargo(b.cargo || "");
+    setBkLA(b.loadAddr || "");
+    setBkUA(b.unloadAddr || "");
+    setBkLP(b.loadPhone || "");
+    setBkUP(b.unloadPhone || "");
+    setBkRate(b.rate || "");
+    setBkTemp(b.temp || "");
+    setBkDepAt(b.departAt || p.freeAt || p.arriveUnload || p.firstLoadAt || nowISO());
+    setModal({ type: "plannedBack", truckId: truckId });
+  }
+
+  function savePlannedBack(truckId, backData) {
+    var t = trucks.find(function(x) { return x.id === truckId; });
+    if (!t || !t.nextPlan) return;
+    var p = Object.assign({}, t.nextPlan, {
+      plannedBack: Object.assign({}, backData, {
+        id: Date.now(),
+        direction: "planned_back",
+        savedAt: nowISO()
+      }),
+      plannedBackText: (backData.cargo || "обратка") + " · " + (backData.loadAddr || "") + " → " + (backData.unloadAddr || "")
+    });
+    var planText = nextPlanText(Object.assign({}, t, { nextPlan: p }));
+    var patch = { nextPlan: p, nextPlanText: planText, _updatedAt: nowISO() };
+    upd(truckId, patch);
+    saveTruckTripCloud(truckId, patch);
+    dbPatch("/trucks/" + truckId, patch).catch(function(){});
+    writeCloudStatus(truckId, t.status || "FORWARD", "Обратка к запланированному рейсу сохранена", "planned_back", "", patch);
+    setModal(null);
+    notify("Обратка к запланированному рейсу сохранена");
+  }
+
+  function removePlannedBack(truckId) {
+    var t = trucks.find(function(x) { return x.id === truckId; });
+    if (!t || !t.nextPlan) return;
+    var p = Object.assign({}, t.nextPlan, { plannedBack: null, plannedBackText: "" });
+    var planText = nextPlanText(Object.assign({}, t, { nextPlan: p }));
+    var patch = { nextPlan: p, nextPlanText: planText, _updatedAt: nowISO() };
+    upd(truckId, patch);
+    saveTruckTripCloud(truckId, patch);
+    dbPatch("/trucks/" + truckId, patch).catch(function(){});
+    notify("Обратка запланированного рейса снята");
+  }
+
   var movingFiltered = useMemo(function() {
     var _tr2 = Array.isArray(trucks) ? trucks : [];
     return _tr2.filter(function(t) {
@@ -4614,12 +4660,16 @@ function App() {
       return React.createElement("div", { key: x.truck.id + "_planned_" + (p.id || p.firstLoadAt || p.loadAt), style: { background: "#18120a", border: "1px solid #f59e0b66", borderRadius: 11, padding: "12px 14px" } },
         React.createElement("div", { style: { display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" } },
           React.createElement("div", { style: { fontSize: 10, color: "#f59e0b", fontWeight: 900, textTransform: "uppercase" } }, "Запланированный рейс"),
-          React.createElement("button", { onClick: function(){ sendDriverDataToClient(x.truck, p); }, style: { background: "#0f172a", border: "1px solid #22c55e66", color: "#86efac", borderRadius: 7, padding: "5px 8px", fontSize: 10, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" } }, "Отправить данные")
+          React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" } },
+            React.createElement("button", { onClick: function(){ sendDriverDataToClient(x.truck, p); }, style: { background: "#0f172a", border: "1px solid #22c55e66", color: "#86efac", borderRadius: 7, padding: "5px 8px", fontSize: 10, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" } }, "Отпр. данные"),
+            React.createElement("button", { onClick: function(){ openPlannedBack(x.truck.id); }, style: { background: "#0f172a", border: "1px solid #06b6d466", color: "#67e8f9", borderRadius: 7, padding: "5px 8px", fontSize: 10, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" } }, p.plannedBack ? "Изм. обратку" : "+ Обратка")
+          )
         ),
         React.createElement("div", { style: { fontSize: 13, color: "#f8fafc", fontWeight: 900, marginTop: 5 } }, p.clientName || "Клиент"),
         React.createElement("div", { style: { fontSize: 11, color: "#cbd5e1", marginTop: 3 } }, x.truck.plate, " · ", x.truck.driver),
         React.createElement("div", { style: { fontSize: 11, color: "#fbbf24", marginTop: 3 } }, "Загрузка: ", fmtDT(p.firstLoadAt || p.arriveLoad || p.loadAt || p.departAt || "")),
-        React.createElement("div", { style: { fontSize: 10, color: "#94a3b8", marginTop: 3 } }, p.route || ((p.originAddr || "") + " → " + (p.unloadAddr || p.unloadCity || "")))
+        React.createElement("div", { style: { fontSize: 10, color: "#94a3b8", marginTop: 3 } }, p.route || ((p.originAddr || "") + " → " + (p.unloadAddr || p.unloadCity || ""))),
+        p.plannedBack ? React.createElement("div", { style: { fontSize: 10, color: "#67e8f9", marginTop: 5, border: "1px solid #06b6d433", borderRadius: 7, padding: "5px 6px" } }, "Обратка: ", p.plannedBackText || ((p.plannedBack.cargo || "обратка") + " · " + (p.plannedBack.loadAddr || "") + " → " + (p.plannedBack.unloadAddr || ""))) : null
       );
     })) : null, React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 9 } }, movingFiltered.map(function(t) {
     var sc = directBadgeColor(t);
@@ -4972,6 +5022,48 @@ function App() {
       },
       onDeleteClient: deleteClient
     }
+  ) : null, modal && modal.type === "plannedBack" ? React.createElement(
+    BackModal,
+    {
+      truck: trucks.find(function(t) {
+        return t.id === modal.truckId;
+      }),
+      prefill: null,
+      onClose: function() {
+        setModal(null);
+      },
+      onSave: function(d) {
+        savePlannedBack(modal.truckId, d);
+      },
+      _cargo: bkCargo,
+      _setCargo: setBkCargo,
+      _la: bkLA,
+      _setLA: setBkLA,
+      _ua: bkUA,
+      _setUA: setBkUA,
+      _lp: bkLP,
+      _setLP: setBkLP,
+      _up: bkUP,
+      _setUP: setBkUP,
+      _rate: bkRate,
+      _setRate: setBkRate,
+      _temp: bkTemp,
+      _setTemp: setBkTemp,
+      _depAt: bkDepAt,
+      _setDepAt: setBkDepAt,
+      orders,
+      onPickOrder: function(o) {
+        if (!o) return;
+        setBkCargo(o.cargo || o.client || "");
+        setBkLA(o.loadAddr || "");
+        setBkUA(o.unloadAddr || "");
+        setBkLP(o.loadPhone || "");
+        setBkUP(o.unloadPhone || "");
+        setBkRate(o.rate || "");
+        setBkTemp(o.temp || "");
+        if (o.orderDate) setBkDepAt(o.orderDate + "T09:00");
+      }
+    }
   ) : null, modal && modal.type === "back" ? React.createElement(
     BackModal,
     {
@@ -5241,10 +5333,50 @@ try{ReactDOM.render(React.createElement(ErrorBoundary,null,React.createElement(A
       if(!plate||!driver){alert("Заполни номер и ФИО");return;}
       var id="custom_"+Date.now();
       var truck={id:id,custom:true,plate:plate,driver:driver,phone:phone,status:"FREE",location:"Минск",freeAt:(new Date()).toISOString().slice(0,16),clientId:null,route:"",backCargo:null,trips:[],driverEvents:[],_updatedAt:(new Date()).toISOString().slice(0,16)};
+      var driverDoc = {
+        id: id,
+        plate: plate,
+        name: driver,
+        phone: phone,
+        pin: null,
+        carrier: "",
+        isHired: false,
+        custom: true,
+        _updatedAt: (new Date()).toISOString()
+      };
+      var statusDoc = {
+        id: id,
+        status: "FREE",
+        key: "free",
+        label: "Свободен",
+        plate: plate,
+        driver: driver,
+        phone: phone,
+        location: "Минск",
+        lastTime: (new Date()).toISOString(),
+        _updatedAt: (new Date()).toISOString()
+      };
+      try {
+        var local = JSON.parse(localStorage.getItem("egida_trucks_backup_v4") || "[]");
+        if (Array.isArray(local) && !local.some(function(x){return x.id===id;})) {
+          local.push(truck);
+          localStorage.setItem("egida_trucks_backup_v4", JSON.stringify(local));
+        }
+      } catch(e) {}
       Promise.all([
         fetch(DB_URL+"/app/trucks/"+id+".json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(truck)}),
-        fetch(DB_URL+"/trucks/"+id+".json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(truck)})
-      ]).then(function(){alert("Машина сохранена");location.reload();}).catch(function(){alert("Ошибка сохранения в Firebase")});
+        fetch(DB_URL+"/trucks/"+id+".json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(truck)}),
+        fetch(DB_URL+"/drivers/"+id+".json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(driverDoc)}),
+        fetch(DB_URL+"/app/status/"+id+".json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(statusDoc)})
+      ]).then(function(res){
+        var bad=res.filter(function(r){return !r.ok;});
+        if(bad.length){throw new Error("Firebase response not ok");}
+        alert("Машина сохранена в облако");
+        location.reload();
+      }).catch(function(err){
+        console.error(err);
+        alert("Ошибка сохранения в Firebase. Проверь интернет/права базы.");
+      });
     };
   }
   document.addEventListener("click",function(e){
