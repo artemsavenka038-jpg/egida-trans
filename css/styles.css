@@ -1,0 +1,78 @@
+/* Fletera by Egida-Trans */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+
+/* ── Theme tokens ─────────────────────────────────────────── */
+:root{
+  /* dark (default) */
+  --bg:#0a0e17; --bg2:#10151f; --bg3:#161c28; --bg4:#1b2333;
+  --border:#212a3b; --border2:#2c3a52;
+  --text:#e8edf5; --text2:#9aa8bd; --text3:#6b7a92; --text4:#445268;
+  --shadow:0 4px 24px rgba(0,0,0,.35);
+  --shadow-lg:0 16px 50px rgba(0,0,0,.5);
+  --accent:#4f8cff; --accent2:#22d3ee;
+  --green:#34d399; --amber:#fbbf24; --cyan:#22d3ee; --red:#f87171;
+  --violet:#a78bfa; --orange:#fb923c;
+}
+[data-theme=light]{
+  --bg:#eef2fa; --bg2:#ffffff; --bg3:#f5f8ff; --bg4:#eaf0fb;
+  --border:#e1e8f5; --border2:#cdd9ef;
+  --text:#16202f; --text2:#475468; --text3:#74829a; --text4:#a3aec2;
+  --shadow:0 4px 18px rgba(33,52,96,.07);
+  --shadow-lg:0 18px 48px rgba(33,52,96,.14);
+  --accent:#2f6bff; --accent2:#0891b2;
+  --green:#16a34a; --amber:#d97706; --cyan:#0891b2; --red:#dc2626;
+  --violet:#7c3aed; --orange:#ea580c;
+}
+
+html,body{
+  background:var(--bg); color:var(--text);
+  font-family:'Manrope',system-ui,sans-serif;
+  min-height:100%; font-size:14px; line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+[data-theme=dark] body{
+  background:
+    radial-gradient(1100px 540px at 88% -8%, rgba(79,140,255,.10), transparent 60%),
+    radial-gradient(900px 500px at 6% 4%, rgba(34,211,238,.07), transparent 55%),
+    var(--bg);
+  background-attachment:fixed;
+}
+[data-theme=light] body{
+  background:
+    radial-gradient(1000px 520px at 90% -10%, rgba(47,107,255,.10), transparent 60%),
+    linear-gradient(180deg,#f3f7ff 0%, var(--bg) 60%);
+  background-attachment:fixed;
+}
+
+h1,h2,h3{font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:-.01em;}
+input,button,select,textarea{font-family:inherit;color:inherit;}
+button{cursor:pointer;border:none;outline:none;background:none;}
+input,select,textarea{outline:none;}
+a{color:inherit;}
+
+/* form controls respect the theme */
+input,select,textarea{
+  background:var(--bg3); color:var(--text);
+  border:1px solid var(--border2);
+}
+input::placeholder,textarea::placeholder{color:var(--text4);}
+
+::-webkit-scrollbar{width:9px;height:9px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:8px;border:2px solid var(--bg);}
+::-webkit-scrollbar-thumb:hover{background:var(--text4);}
+
+@keyframes fl-fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes fl-pop{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:none}}
+@keyframes fl-toast{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+@keyframes fl-overlay{from{opacity:0}to{opacity:1}}
+
+.fl-card{animation:fl-fade .28s ease both;}
+.fl-modal-overlay{animation:fl-overlay .18s ease both;}
+.fl-modal{animation:fl-pop .24s cubic-bezier(.2,.8,.2,1) both;}
+.fl-press{transition:transform .12s ease, filter .12s ease, background .15s ease, border-color .15s ease, color .15s ease;}
+.fl-press:hover{filter:brightness(1.08);}
+.fl-press:active{transform:scale(.97);}
+.fl-tab{transition:background .15s ease,color .15s ease;}
+.fl-row-hover{transition:background .15s ease, border-color .15s ease, transform .15s ease;}
+.fl-row-hover:hover{transform:translateY(-2px);}
