@@ -1,7 +1,0 @@
-{
-  "functions": {
-    "api/cap.js": {
-      "maxDuration": 15
-    }
-  }
-}
