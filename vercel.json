@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "api/cap.js": {
+      "maxDuration": 15
+    },
+    "api/route.js": {
+      "maxDuration": 20
+    }
+  }
+}
